@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>영어 문법 퀴즈 (객관식)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1, h2 {
+      margin-bottom: 10px;
+    }
+    #quizContainer, #resultContainer {
+      display: none;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .question-box {
+      margin-bottom: 20px;
+    }
+    .choices {
+      list-style: none;
+      padding: 0;
+    }
+    .choices li {
+      margin: 8px 0;
+    }
+    .explanation {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #efefef;
+      border-radius: 5px;
+    }
+    button {
+      cursor: pointer;
+      padding: 10px 15px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007BFF;
+      color: #fff;
+      font-size: 1rem;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .correct {
+      color: green;
+      font-weight: bold;
+    }
+    .incorrect {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>영어 문법 퀴즈</h1>
+  <p>아래 버튼을 눌러 퀴즈를 시작하세요.</p>
+  <button onclick="startQuiz()">시작하기</button>
+</div>
+
+<div id="quizContainer">
+  <h2 id="questionTitle"></h2>
+  <div class="question-box">
+    <p id="questionText"></p>
+    <ul id="choiceList" class="choices"></ul>
+  </div>
+
+  <div id="feedback"></div> <!-- 정답/오답 및 해설 표시 영역 -->
+
+  <button id="submitBtn" onclick="submitAnswer()">제출</button>
+  <button id="nextBtn" onclick="nextQuestion()" style="display:none;">다음 문제</button>
+</div>
+
+<div id="resultContainer">
+  <h2>퀴즈를 모두 풀었습니다!</h2>
+  <p>수고하셨습니다.</p>
+</div>
+
+<script>
+// 문제 데이터 (각 문제마다 question, choices, correct, explanation 포함)
+const questions = [
+  {
+    question: "1) “It's ___ orange bag.” 문장에서 빈칸에 들어갈 알맞은 관사는?",
+    choices: ["a", "an", "the", "some"],
+    correct: 1, // 'an'
+    explanation: "정답은 'an'입니다. 'orange'가 모음 소리로 시작하므로 'an'을 사용해야 합니다."
+  },
+  {
+    question: "2) “___ is my father.” (그는)을 의미하는 올바른 주격 대명사는?",
+    choices: ["He", "She", "I", "They"],
+    correct: 0, // 'He'
+    explanation: "정답은 'He'입니다. 남성 3인칭 단수 주어이므로 'He'를 사용합니다."
+  },
+  {
+    question: "3) child의 복수형으로 알맞은 것은 무엇일까요?",
+    choices: ["childs", "childes", "child", "children"],
+    correct: 3, // 'children'
+    explanation: "정답은 'children'입니다. child는 불규칙 복수형으로 children이 됩니다."
+  },
+  {
+    question: "4) “I ___ 8 years old.” 문장에서 빈칸에 올바른 be동사는?",
+    choices: ["am", "is", "are", "be"],
+    correct: 0, // 'am'
+    explanation: "정답은 'am'입니다. 주어가 'I'일 때는 'am'을 사용합니다."
+  },
+  {
+    question: "5) “He ___ (watch) TV every day.” 현재 시제에서 알맞은 동사 형태는?",
+    choices: ["watch", "watches", "watching", "watched"],
+    correct: 1, // 'watches'
+    explanation: "정답은 'watches'입니다. 3인칭 단수 주어(He)에는 동사에 -s/-es를 붙여야 합니다."
+  },
+  {
+    question: "6) 다음 단어들을 알맞게 배열하면? “loves / a / She / cat”",
+    choices: [
+      "A cat she loves",
+      "She a cat loves",
+      "She loves a cat",
+      "Loves she a cat"
+    ],
+    correct: 2, // 'She loves a cat'
+    explanation: "정답은 'She loves a cat'입니다. 영어 문장 구조는 주어(She) + 동사(loves) + 목적어(a cat)입니다."
+  },
+  {
+    question: "7) “That is ___ (Tina) book.” 소유를 나타내는 올바른 형태는?",
+    choices: ["Tina is", "Tinas'", "Tina's", "Tina"],
+    correct: 2, // "Tina's"
+    explanation: "정답은 “Tina's”입니다. 사람 이름 뒤에 's를 붙여 소유를 나타냅니다."
+  },
+  {
+    question: "8) “___ three apples on the table.” 문장에서 빈칸에 들어갈 올바른 표현은? (There is / There are)",
+    choices: ["There is", "There are", "They are", "These are"],
+    correct: 1, // 'There are'
+    explanation: "정답은 'There are'입니다. 사과가 세 개(복수) 있으므로 There are를 사용합니다."
+  },
+  {
+    question: "9) “She is a singer.” 문장을 부정문으로 만들면?",
+    choices: [
+      "She isn't a singer.",
+      "She not a singer.",
+      "She no a singer.",
+      "She don't a singer."
+    ],
+    correct: 0, // "She isn't a singer."
+    explanation: "정답은 “She isn't a singer.”입니다. be동사 뒤에 not을 붙여 부정문을 만듭니다."
+  },
+  {
+    question: "10) “They play soccer every day.” 문장을 의문문으로 바꿔 쓰면?",
+    choices: [
+      "Do they plays soccer every day?",
+      "Does they play soccer every day?",
+      "Do they play soccer every day?",
+      "They do play soccer every day?"
+    ],
+    correct: 2, // "Do they play soccer every day?"
+    explanation: "정답은 “Do they play soccer every day?”입니다. 주어가 they → 조동사 'Do' + 동사원형(play)."
+  },
+  {
+    question: "11) “go”의 과거형으로 알맞은 것은?",
+    choices: ["goed", "goes", "went", "gone"],
+    correct: 2, // 'went'
+    explanation: "정답은 'went'입니다. 'go'는 불규칙 동사로 과거형이 'went'가 됩니다."
+  },
+  {
+    question: "12) “I ___ ride a bike.” 문장에서 자전거를 탈 수 있다는 의미로 쓸 때 알맞은 것은?",
+    choices: ["can", "can't", "could", "don't"],
+    correct: 0, // "can"
+    explanation: "정답은 'can'입니다. 'I can ride a bike'는 '나는 자전거를 탈 수 있다'는 의미입니다."
+  }
+];
+
+let currentQuestionIndex = 0;
+let userAnswer = null; // 사용자가 선택한 답안 인덱스
+
+function startQuiz() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('quizContainer').style.display = 'block';
+  currentQuestionIndex = 0;
+  showQuestion();
+}
+
+// 현재 문제 표시
+function showQuestion() {
+  const questionObj = questions[currentQuestionIndex];
+  document.getElementById('questionTitle').textContent = questionObj.question;
+  document.getElementById('questionText').textContent = "";
+  document.getElementById('feedback').innerHTML = "";
+
+  const choiceList = document.getElementById('choiceList');
+  choiceList.innerHTML = ""; // 기존 보기 초기화
+
+  // 보기 생성
+  questionObj.choices.forEach((choice, index) => {
+    const li = document.createElement('li');
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'quizChoice';
+    radio.value = index;
+    radio.id = 'choice' + index;
+
+    const label = document.createElement('label');
+    label.htmlFor = 'choice' + index;
+    label.textContent = choice;
+
+    li.appendChild(radio);
+    li.appendChild(label);
+    choiceList.appendChild(li);
+  });
+
+  // 버튼 초기화
+  document.getElementById('submitBtn').style.display = 'inline-block';
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+// 제출 버튼 클릭 시 정답 확인
+function submitAnswer() {
+  const questionObj = questions[currentQuestionIndex];
+  const selected = document.querySelector('input[name="quizChoice"]:checked');
+
+  if (!selected) {
+    alert("답안을 선택하세요!");
+    return;
+  }
+
+  userAnswer = parseInt(selected.value, 10); 
+  const feedback = document.getElementById('feedback');
+  feedback.innerHTML = ""; // 초기화
+
+  // 정답/오답 판별
+  if (userAnswer === questionObj.correct) {
+    feedback.innerHTML = `<p class="correct">정답입니다!</p>
+                          <div class="explanation">${questionObj.explanation}</div>`;
+  } else {
+    const correctText = questionObj.choices[questionObj.correct];
+    feedback.innerHTML = `<p class="incorrect">오답입니다!</p>
+                          <div class="explanation">
+                            정답은 <strong>"${correctText}"</strong>입니다.<br>
+                            ${questionObj.explanation}
+                          </div>`;
+  }
+
+  // 다음 단계로 버튼 전환
+  document.getElementById('submitBtn').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'inline-block';
+}
+
+// 다음 문제로 이동
+function nextQuestion() {
+  currentQuestionIndex++;
+  if (currentQuestionIndex >= questions.length) {
+    endQuiz();
+  } else {
+    showQuestion();
+  }
+}
+
+// 퀴즈 종료 화면
+function endQuiz() {
+  document.getElementById('quizContainer').style.display = 'none';
+  document.getElementById('resultContainer').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
